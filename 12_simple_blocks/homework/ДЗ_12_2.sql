@@ -1,23 +1,23 @@
 /*
-2. Исправьте листинг программы.
+2. РСЃРїСЂР°РІСЊС‚Рµ Р»РёСЃС‚РёРЅРі РїСЂРѕРіСЂР°РјРјС‹.
 begin
     if round(dbms_random.value(0, 10), 2 <= 3 then
-        dbms_output.put_line('БС1')
+        dbms_output.put_line('Р‘РЎ1')
     elif round(dbms_random.value(0 10), 2) = 5 than
-        dbms_ouptut.put_line('БС2');
+        dbms_ouptut.put_line('Р‘РЎ2');
     else
-        dbms_output.put_line('счёт');
+        dbms_output.put_line('СЃС‡С‘С‚');
     end
 end;
 */
 
 begin
     if round(dbms_random.value(0, 10), 2) <= 3 then
-        dbms_output.put_line('БС1');
+        dbms_output.put_line('Р‘РЎ1');
     elsif round(dbms_random.value(0, 10), 2) = 5 then
-        dbms_output.put_line('БС2');
+        dbms_output.put_line('Р‘РЎ2');
     else
-        dbms_output.put_line('счёт');
+        dbms_output.put_line('СЃС‡С‘С‚');
     end if;
 end;
 
