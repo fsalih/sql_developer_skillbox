@@ -1,0 +1,63 @@
+create or replace package pkg_agg_employees is
+    type report_rec is record (department_name varchar2(32),
+                               sum_salary number,
+                               min_salary number,
+                               avg_salary number,
+                               max_salary number,
+                               employee_list varchar2(3200));
+    type report_tbl is table of report_rec;
+    
+    procedure prepare_table(result_table out report_tbl);
+    function get_report return report_tbl pipelined;   
+    
+end pkg_agg_employees;
+
+
+create or replace package body pkg_agg_employees is
+
+    procedure prepare_table(result_table out report_tbl) is
+        v_report_row report_rec;
+        cursor c_report is
+            select dep.department_name as dn,
+                   sum(emp.salary)     as sm,
+                   min(emp.salary)     as mn,
+                   avg(emp.salary)     as av,
+                   max(emp.salary)     as mx,
+                   listagg(emp.first_name||' '||emp.last_name,chr(10)) within group(order by emp.first_name||' '||emp.last_name) 
+            from departments dep
+            inner join employees emp
+                on dep.department_id=emp.department_id
+            group by dep.department_name;
+    begin
+        result_table:=null;
+        open c_report;
+        fetch c_report bulk collect into result_table;
+        close c_report;        
+    end prepare_table;
+    
+    function get_report return report_tbl pipelined
+    is
+        v_table report_tbl;
+    begin
+        v_table:=null;
+        prepare_table(v_table);
+        for r in 1..v_table.count loop
+            pipe row(v_table(r));
+        end loop;
+        return;
+    end get_report;
+end pkg_agg_employees;
+
+
+select * from table(pkg_agg_employees.get_report);
+
+select dep.department_name,
+       sum(emp.salary),
+       min(emp.salary),
+       avg(emp.salary),
+       max(emp.salary),
+       listagg(emp.first_name||' '||emp.last_name,chr(10)) within group(order by emp.first_name||' '||emp.last_name) 
+from departments dep
+inner join employees emp
+    on dep.department_id=emp.department_id
+group by dep.department_name;
