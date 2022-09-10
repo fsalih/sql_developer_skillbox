@@ -78,7 +78,7 @@ END;
 
 
 create table passenger_rating (passenger_id int not null, 
-                               rating decimal,
+                               rating decimal(6,2),
                                time_create timestamp not null,
                                primary key (passenger_id),
                                foreign key (passenger_id) references taxi_fatikhov.passenger(id)); 
@@ -123,7 +123,7 @@ BEGIN
 END; 
 
 create table driver_rating (driver_id int not null, 
-                               rating decimal,
+                               rating decimal(6,2),
                                time_create timestamp not null,
                                primary key (driver_id),
                                foreign key (driver_id) references taxi_fatikhov.driver(id)); 
@@ -168,7 +168,7 @@ create table rate (id int generated as identity not null,
                    currency1_id int not null, 
                    currency2_id int not null,  
                    time_create timestamp not null,
-                   rate decimal not null,
+                   rate decimal(17,2) not null,
                    primary key (id),
                    foreign key (currency1_id) references taxi_fatikhov.currency(id),
                    foreign key (currency2_id) references taxi_fatikhov.currency(id));
@@ -238,7 +238,7 @@ create table rent (id int generated as identity not null,
                    car_id int not null,  
                    date_start date not null,
                    data_stop date,
-                   gas_mileage decimal,
+                   gas_mileage decimal(9,2),
                    distance number,
                    time_create timestamp not null,
                    primary key (id),                
@@ -253,7 +253,7 @@ BEGIN
 END;      
 
 create table payment (id int generated as identity not null, 
-                      amount_to_paid decimal not null, 
+                      amount_to_paid decimal(15,2) not null, 
                       currency_id int not null,  
                       type varchar(15) check(type in ('CARD', 'CASH')) not null,
                       time_create timestamp not null,
@@ -272,7 +272,7 @@ create table refueling (id int generated as identity not null,
                         driver_id int not null,  
                         car_id int not null,  
                         payment_id int not null,
-                        amount_of_gasoline decimal not null,
+                        amount_of_gasoline decimal(6,2) not null,
                         adress_id int not null,
                         time_create timestamp not null,
                         primary key (id),                
@@ -317,7 +317,7 @@ END;
 create table way (id int generated as identity not null, 
                   from_adress_id  int not null, 
                   to_adress_id  int not null, 
-                  distance decimal not null, 
+                  distance decimal(9,2) not null, 
                   order_id  int not null,
                   preview_way_id int,
                   time_create timestamp not null,
