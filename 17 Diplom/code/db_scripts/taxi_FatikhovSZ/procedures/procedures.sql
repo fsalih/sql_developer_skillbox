@@ -1,17 +1,17 @@
 /*
-Создать процедуру для бронирования автомобиля водителем.
-Параметры процедуры:
-- id водителя
-- id автомобиля.
-Процедура создаёт запись в таблице rent, оставляя поля date_stop, gas_mileage
-и distance пустыми. В таблице car необходимо установить true в поле is_reserved.
+     .
+ :
+- id 
+- id .
+     rent,   date_stop, gas_mileage
+ distance .   car   true   is_reserved.
 */
 create or replace procedure proc_car_reserving (p_driver_id in number, p_car_id in int) ------------------------------- 4
     is
         car_reseved exception;
         car_is_reserved int;
     begin
-        /* ошибка если машина занята*/
+        /*    */
         select is_reserved into car_is_reserved from taxi_fatikhov.car where id=p_car_id;        
         if car_is_reserved = 1 then 
             RAISE car_reseved; 
@@ -32,13 +32,13 @@ create or replace procedure proc_car_reserving (p_driver_id in number, p_car_id 
             raise_application_error(-20002,'An error was encountered - '||SQLCODE||' -ERROR- '||SQLERRM);    
     end;
 /*   
-Создать процедуру для снятия автомобиля с брони.
-Параметры процедуры:
-- id автомобиля
-- количество потраченного бензина
-- дистанцию, на которую проехал автомобиль
-Процедура обновляет запись в таблице rent. Также устанавливает значение false в
-is_reserved таблицы car и увеличивает значение поля mileage
+      .
+ :
+- id 
+-   
+- ,    
+     rent.    false 
+is_reserved  car     mileage
 */
 
 create or replace procedure proc_car_unreserve (p_car_id in number, p_fuel_count in number, p_distance in number) ----- 5
@@ -46,7 +46,7 @@ create or replace procedure proc_car_unreserve (p_car_id in number, p_fuel_count
         car_not_reseved exception;
         car_is_not_reserved int;
     begin
-         /* ошибка если машина занята*/
+         /*    */
         select is_reserved into car_is_not_reserved from taxi_fatikhov.car where id=p_car_id;        
         if car_is_not_reserved = 0 then 
             RAISE car_not_reseved; 
@@ -73,62 +73,64 @@ create or replace procedure proc_car_unreserve (p_car_id in number, p_fuel_count
     end;
 
 /*
-Создать процедуру заправки автомобиля. -------------------------------------------------------------------------------- 6
-Параметры процедуры:
-- id автомобиля
-- сумма к оплате
-- валюта
-- тип оплаты
-- количество бензина
-Процедура создаёт запись в таблице refueling и payment
+   . -------------------------------------------------------------------------------- 6
+ :
+- id 
+-   
+- 
+-  
+-  
+     refueling  payment
 */
 
-create or replace procedure proc_car_refueling (p_car_id in number, p_cost in number, p_currency in number,             /* проверить правильность работы !!!!! */
-                                                p_pay_type in varchar2, p_fuel_count in number, p_refill_id number)                          /*Внимание! Тип валюты в чем должна быть? */
+create or replace procedure proc_car_refueling (p_car_id in number, p_cost in number, p_currency in number,             /* РїСЂРѕРІРµСЂРёС‚СЊ РїСЂР°РІРёР»СЊРЅРѕСЃС‚СЊ СЂР°Р±РѕС‚С‹ !!!!! */
+                                                p_pay_type in varchar2, p_fuel_count in number, p_refill_id number)                          /*Р’РЅРёРјР°РЅРёРµ! РўРёРї РІР°Р»СЋС‚С‹ РІ С‡РµРј РґРѕР»Р¶РЅР° Р±С‹С‚СЊ? */
     is
        v_driver_id number := null;
        v_new_pay_id number;
+       v_time timestamp;
     begin
-        select driver_id into v_driver_id from rent where car_id=p_car_id;
-        
+        select time_create into v_time from rent where car_id=p_car_id;
+        select driver_id into v_driver_id from rent where car_id=p_car_id and time_create=v_time;
+
         insert into payment (amount_to_paid, currency_id, type) VALUES (p_cost, p_currency, p_pay_type); 
-        
+
         SELECT max(id) into v_new_pay_id FROM payment ;
-        
+
         INSERT INTO refueling (driver_id,  car_id, payment_id, amount_of_gasoline, adress_id) values
                               (v_driver_id, p_car_id, v_new_pay_id, p_fuel_count, p_refill_id);                                            
         commit;
-                
+
     exception
-        
+
         WHEN OTHERS THEN
             raise_application_error(-20001,'An error was encountered - '||SQLCODE||' -ERROR- '||SQLERRM);    
     end;
     
  /*                                             
- 7. Создать процедуру создания заказа.                                                               ------------------ 7
-Параметры процедуры:
-- id пассажира
-- id адреса
-- массив id адресов
-- массив дистанций
-- сумма к оплате
-- тип оплаты
-- валюта
-Процедура создаёт запись в таблице order со статусом SEARCH_DRIVER и в таблице
-payment. Также процедура создаёт записи в таблице way. Алгоритм заполнения таблицы way:
-Процедура принимает вторым параметром id начального адреса, третьим параметром точки
-остановки и четвёртым параметром расстояния от точки до точки (первая запись указывает
-расстояние от точки в период параметре до точки в первом элементе третьего параметра). Вы
-должны в way создать столько записей, сколько передано точек остановки. 1 запись - это 1
-отрезок дороги. Самая первая запись в way для данного заказа создаётся с пустым полем
-preview_way_id, в from_address_id указывается id начального адреса, а в to_address_id
-указывается первая точка остановки. Остальные записи в way для данного заказа создаются по
-алгоритму:
-- в from_address_id указывает значение поля to_address_id предыдущей записи в way для
-данного заказа.
-- в to_address_id указываем следующую точку остановки
-- в preview_way_id указываем id предыдущей записи way для данного заказа.
+ 7.    .                                                               ------------------ 7
+ :
+- id 
+- id 
+-  id 
+-  
+-   
+-  
+- 
+     order   SEARCH_DRIVER   
+payment.       way.    way:
+    id  ,   
+         (  
+            ). 
+  way   ,    . 1  -  1
+ .     way       
+preview_way_id,  from_address_id  id  ,   to_address_id
+   .    way     
+:
+-  from_address_id    to_address_id    way 
+ .
+-  to_address_id    
+-  preview_way_id  id   way   .
  */
  
 CREATE OR REPLACE TYPE num_table_type IS TABLE OF number;
@@ -137,9 +139,9 @@ create or replace procedure proc_create_order (p_passenger_id in number,
                                                 p_adress_id in number, 
                                                 t_adress_id in num_table_type,
                                                 t_distanse in num_table_type,
-                                                p_cost in number, -- сумма к оплате
-                                                p_pay_type in varchar2, -- тип оплаты
-                                                p_currency in number) -- валюта                        
+                                                p_cost in number, --   
+                                                p_pay_type in varchar2, --  
+                                                p_currency in number) --                         
     is
        --v_driver_id number := null;
        v_new_pay_id number;
@@ -188,10 +190,10 @@ create or replace procedure proc_create_order (p_passenger_id in number,
     end;
     
 /*
-8. Создать процедуру обновления рейтинга пользователей.   -------------------------------------------------------------- 8.
-Параметры процедуры:
-- период в днях, за который стоит взять оценки пользователей от водителей.
-Процедура обновляет значение для каждого пользователя в таблице passenger_rating.
+8.     .   -------------------------------------------------------------- 8.
+ :
+-   ,        .
+        passenger_rating.
 */
 create or replace procedure proc_update_user_rating (p_days in number) 
     is
@@ -216,10 +218,10 @@ create or replace procedure proc_update_user_rating (p_days in number)
     end;    
  
 /*
-9. Создать процедуру обновления рейтинга водителей.         ------------------------------------------------------------ 9.
-Параметры процедуры:
-- период в днях, за который стоит взять оценки водителей от пользователей.
-Процедура обновляет значение для каждого водителя в таблице driver_rating
+9.     .         ------------------------------------------------------------ 9.
+ :
+-   ,        .
+        driver_rating
 */
 create or replace procedure proc_update_driver_rating (p_days in number) 
     is
@@ -245,11 +247,11 @@ create or replace procedure proc_update_driver_rating (p_days in number)
 
 
 /*
-10. Создать конвейерную функцию, которая будет по переданному месяцу и году   ------------------------------------------ 10.
-рассчитывать зарплату для каждого водителя в рублях. Зарплата водителя
-рассчитывается по формуле:
-percent_of_payment * (sum(стоимость заказа) - sum(стоимость заправки))
-Брать курс валюты за переданный месяц либо ранее.
+10.   ,          ------------------------------------------ 10.
+      .  
+  :
+percent_of_payment * (sum( ) - sum( ))
+       .
 */
 
 create or replace package driver_report is
@@ -276,7 +278,7 @@ create or replace package body driver_report is
             v_salary_row.id:=r.id;
             v_salary_row.salary:=0;
             
-            select sum(pmnt.amount_to_paid*rt.rate) into v_sum_pay      -- расчет суммы за поездки
+            select sum(pmnt.amount_to_paid*rt.rate) into v_sum_pay      --    
                 from order_tab ord
                 inner join payment pmnt on pmnt.id=ord.payment_id
                 inner join rate rt on pmnt.currency_id=rt.currency1_id 
@@ -295,7 +297,7 @@ create or replace package body driver_report is
                                                         currency2_id
                                          );  
                                          
-            select sum(pmnt.amount_to_paid*rt.rate) into v_sum_pay_to_gas    -- расчет суммы за заправки
+            select sum(pmnt.amount_to_paid*rt.rate) into v_sum_pay_to_gas    --    
                 from refueling rfl
                 inner join payment pmnt on pmnt.id=rfl.payment_id
                 inner join rate rt on pmnt.currency_id=rt.currency1_id 
@@ -316,7 +318,7 @@ create or replace package body driver_report is
             if v_sum_pay_to_gas is null then v_sum_pay_to_gas:=0; end if;
             if v_sum_pay is null then v_sum_pay:=0; end if;
             
-            v_salary_row.salary:=(v_sum_pay-v_sum_pay_to_gas)*r.percent_of_payment;  -- плохая формула, можно злоупотреблять                
+            v_salary_row.salary:=(v_sum_pay-v_sum_pay_to_gas)*r.percent_of_payment;  --  ,                  
             pipe row(v_salary_row);
         end loop;
         return;
