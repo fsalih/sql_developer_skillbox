@@ -90,7 +90,7 @@ create or replace procedure proc_car_refueling (p_car_id in number, p_cost in nu
        v_new_pay_id number;
        v_time timestamp;
     begin
-        select time_create into v_time from rent where car_id=p_car_id;
+        select max(time_create) into v_time from rent where car_id=p_car_id;
         select driver_id into v_driver_id from rent where car_id=p_car_id and time_create=v_time;
 
         insert into payment (amount_to_paid, currency_id, type) VALUES (p_cost, p_currency, p_pay_type); 
